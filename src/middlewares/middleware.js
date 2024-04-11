@@ -1,21 +1,28 @@
 exports.middlewareGlobal = (req, res, next) => {
-    if(req.body.cliente){
-        req.body.cliente = req.body.cliente.replace('Miranda', 'NÃO USE MIRANDA');
-        console.log();
-        console.log(`Vi que você postou ${req.body.cliente}`);
-        console.log();
-    }
-    res.locals.umaVariavelLocal = 'Este é o valor da variavel local.'; // Injetando um valor em todas as rotas. Será injetado em todas tendo em vista que, todas as rotas passam pelo middlewareGlobal.
-    next();
+  res.locals.errors = req.flash('errors');
+  res.locals.success = req.flash('success');
+  res.locals.user = req.session.user;
+  next();
 };
 
-exports.checkCsurfError = (err, req, res, next) => {
-    if(err && err.code === 'EBADCSRFTOKEN'){
-        return res.render('404');
-    }
+exports.checkCsrfError = (err, req, res, next) => {
+  if(err) {
+    return res.render('404');
+  }
+  next();
 };
 
-exports.csurfMiddleware = (req, res, next) =>{
-    res.locals.csurfToken = req.csrfToken();
-    next();
+exports.csrfMiddleware = (req, res, next) => {
+  res.locals.csrfToken = req.csrfToken();
+  next();
 };
+
+exports.loginRequired = (req, res, next) =>{
+  if(!req.session.user){
+    req.flash('errors', 'Você precisa estar logado para usar este recurso.');
+    req.session.save(() => res.redirect('/'));
+    return;
+  }
+
+  next();
+}
